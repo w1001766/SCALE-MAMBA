@@ -1,5 +1,6 @@
-ROOT = /users/cosic/nsmart/work/SCALE/Private/
-OSSL = /users/cosic/nsmart/local/openssl/
+#ROOT = /users/cosic/nsmart/work/SCALE/Private/
+#OSSL = /users/cosic/nsmart/local/openssl/
+OSSL = /$HOME/local/openssl
 
 # Debug flags
 #   SH_DEBUG = Share debugging (for development only)
