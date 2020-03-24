@@ -1,0 +1,532 @@
+\subsubsection{Load/store}
+\begin{longtable}{|l|c|p{1in}|c|p{2.27in}|c|}
+\hline
+Instr & Code & Operands & Vect & Description & Notes \\
+\hline
+  LDI & 0x1 & ['cw', 'i'] & \tick  & LDI ci, n \newline
+                                    Assigns (loads) clear register ci the value n. &  \\
+  LDSI & 0x2 & ['sw', 'i'] & \tick  & LDSI si, n \newline
+                                    Assigns secret register si a share of the value n. &  \\
+  LDMC & 0x3 & ['cw', 'int'] & \tick  & LDMC ci, n \newline
+                                    Assigns clear register ci the value in memory C[n]. & $\star(r)$ \\
+  LDMS & 0x4 & ['sw', 'int'] & \tick  & LDMS si, n \newline
+                                    Assigns secret register si the value in memory S[n]. & $\star(r)$ \\
+  STMC & 0x5 & ['c', 'int'] & \tick  & STMC ci, n \newline
+                                    Sets memory C[n] to be the value in clear register ci. & $\star(w)$ \\
+  STMS & 0x6 & ['s', 'int'] & \tick  & STMS si n \newline
+                                     Sets memory S[n] to be the value in secret register si. & $\star(w)$ \\
+  LDMCI & 0x7 & ['cw', 'r'] & \tick  & LDMCI ci, rj  \newline
+                                    Assigns clear register ci the value in clear memory R[rj],
+				    where rj is the j-th regint register. & $\star(r)$ \\
+  LDMSI & 0x8 & ['sw', 'r'] & \tick  & LDMSI si, rj \newline
+                                    Assigns secret register si the value in secret memory S[rj],
+				    where rj is the j-th regint register. & $\star(r)$ \\
+  STMCI & 0x9 & ['c', 'r'] & \tick  & STMCI ci, rj  \newline
+                                    Sets clear memory C[rj] to be the value in clear register ci,
+                                    where rj is the j-th regint register. & $\star(w)$ \\
+  STMSI & 0xA & ['s', 'r'] & \tick  & STMSI si, rj  \newline
+                                    Sets secret memory S[rj] to be the value in secret register si,
+				    where rj is the j-th regint register. & $\star(w)$ \\
+  MOVC & 0xB & ['cw', 'c'] & \tick  & MOVC ci, cj \newline
+                                    Assigns clear register ci the value in the clear register cj. &  \\
+  MOVS & 0xC & ['sw', 's'] & \tick  & MOVS si, sj \newline
+                                    Assigns secret register si the value in the secret register sj. &  \\
+  MOVINT & 0xD & ['rw', 'r'] & \tick  & MOVINT ri, rj \newline
+                                    Assigns regint register ri the value in the regint register rj. &  \\
+  LDMINT & 0xCA & ['rw', 'int'] & \tick  & LDMINT ri, n \newline
+                    Assigns regint register ri the value in memory R[n]. & $\star(r)$ \\
+  STMINT & 0xCB & ['r', 'int'] & \tick  & STMINT ri, n \newline
+                    Sets regint memory R[n] to be the value ri. & $\star(w)$ \\
+  LDMINTI & 0xCC & ['rw', 'r'] & \tick  & LDMINTI ri, rj  \newline
+                                       Assigns regint register ri the value in memory R[rj],
+				       where rj is the j-th regint register. & $\star(r)$ \\
+  STMINTI & 0xCD & ['r', 'r'] & \tick  & STMINTI ri, rj  \newline
+                                      Sets regint memory R[rj] to be the value in regint register ri,
+				      where rj is the j-th regint register. & $\star(w)$ \\
+\hline
+\end{longtable}
+\subsubsection{Machine}
+\begin{longtable}{|l|c|p{1in}|c|p{2.27in}|c|}
+\hline
+Instr & Code & Operands & Vect & Description & Notes \\
+\hline
+  LDTN & 0x10 & ['rw'] & \tick  & LDTN ri \newline
+                                 Assigns regint register ri the number of the current thread. &  \\
+  LDARG & 0x11 & ['rw'] & \tick  & LDARG ri \newline
+                                 Assigns the argument passed to the current thread to the regint register ri.
+                                 In MAMBA compiler this is also used to pass variables to functions. & $\star(r)$ \\
+  REQBL & 0x12 & ['int'] &  & REQBL n \newline
+                                  Defines the required bitlength for the modp arithmetic &  \\
+  STARG & 0x13 & ['r'] & \tick  & STARG ri \newline
+                                 Assigns register ri to variable in the thread argument.
+                                 In MAMBA compiler this is also used to pass variables to functions. & $\star(w)$ \\
+  RUN\_TAPE & 0x19 & ['int', 'int', 'int'] &  & RUN\_TAPE i j n  \newline
+                                           In thread i start tape n with argument j. & $\dagger$ \\
+  JOIN\_TAPE & 0x1A & ['int'] &  & JOIN\_TAPE i \newline
+                                   Wait until tape in thread i has finished. & $\dagger$ \\
+  CRASH & 0x1B & [] &  & CRASH \newline
+                                    Crash the runtime by calling CRASH on the IO class. & $\ddagger$ \\
+  RESTART & 0x1C & [] &  & RESTART \newline
+                          Restart the runtime by reloading the schedule file.
+                          Note, the schedule file may have changed since it has last been loaded.
+                          See the main documentation for how this instruction is intended to be used. & $\ddagger$, $\tau_0$ \\
+  CLEAR\_MEMORY & 0x1D & [] &  & CLEAR\_MEMORY \newline
+         Clears the main memory. This can cause problems if executed in one thread
+         and the memory is still being used in another. It is really for usage in
+         thread zero, when all other threads are doing nothing. Say before a RESTART & $\dagger$ \\
+  CLEAR\_REGISTERS & 0x1E & [] &  & CLEAR\_REGISTERS \newline
+         Like CLEAR\_MEMORY but this clears the registers of the current processor,
+         i.e. within the current thread. & $\dagger$ \\
+\hline
+\end{longtable}
+\subsubsection{Addition}
+\begin{longtable}{|l|c|p{1in}|c|p{2.27in}|c|}
+\hline
+Instr & Code & Operands & Vect & Description & Notes \\
+\hline
+  ADDC & 0x20 & ['cw', 'c', 'c'] & \tick  & ADDC ci cj ck \newline
+                                            Adds clear registers ci=cj+ck. &  \\
+  ADDS & 0x21 & ['sw', 's', 's'] & \tick  & ADDS si sj sk \newline
+                                            Adds secret registers si=sj+sk. &  \\
+  ADDM & 0x22 & ['sw', 's', 'c'] & \tick  & ADDM si sj ck \newline
+                                            Adds clear register onto secret one si=sj+ck. &  \\
+  ADDCI & 0x23 & ['cw', 'c', 'i'] & \tick  & ADDCI ci cj n \newline
+                                            Adds clear register to an immediate ci=cj+n. &  \\
+  ADDSI & 0x24 & ['sw', 's', 'i'] & \tick  & ADDSI si sj n \newline
+                                            Adds secret register to an immediate si=sj+n. &  \\
+  SUBC & 0x25 & ['cw', 'c', 'c'] & \tick  & SUBCC ci cj ck \newline
+                                             Subtracts clear registers ci=cj-ck. &  \\
+  SUBS & 0x26 & ['sw', 's', 's'] & \tick  & SUBS si sj sk \newline
+                                            Subtracts secret registers si=sj-sk. &  \\
+  SUBML & 0x27 & ['sw', 's', 'c'] & \tick  & SUBML si sj ck \newline
+                                            Subtracts clear register from a secret one si=sj-ck. &  \\
+  SUBMR & 0x28 & ['sw', 'c', 's'] & \tick  & SUBML si cj sk \newline
+                                            Subtracts secret register from a clear one si=cj-sk. &  \\
+  SUBCI & 0x29 & ['cw', 'c', 'i'] & \tick  & SUBCI ci cj n \newline
+                                            Subtract immediate value from a clear register ci=cj-n. &  \\
+  SUBSI & 0x2A & ['sw', 's', 'i'] & \tick  & SUBSI si sj n \newline
+                                            Subtract immediate value from a secret register si=sj-n. &  \\
+  SUBCFI & 0x2B & ['cw', 'c', 'i'] & \tick  & SUBCFI ci cj n \newline
+                                            Subtract clear register from an immediate  ci=n-cj. &  \\
+  SUBSFI & 0x2C & ['sw', 's', 'i'] & \tick  & SUBSFI si sj n \newline
+                                            Subtract secret register from an immediate  si=n-sj. &  \\
+\hline
+\end{longtable}
+\subsubsection{Multiplication/division/other arithmetic}
+\begin{longtable}{|l|c|p{1in}|c|p{2.27in}|c|}
+\hline
+Instr & Code & Operands & Vect & Description & Notes \\
+\hline
+  MULC & 0x30 & ['cw', 'c', 'c'] & \tick  & MULC ci cj ck \newline
+                                             Multiplies clear registers ci=cj * ck. &  \\
+  MULM & 0x31 & ['sw', 's', 'c'] & \tick  & MULM si sj ck \newline
+                                             Multiplies secret and clear registers si=sj * ck. &  \\
+  MULCI & 0x32 & ['cw', 'c', 'i'] & \tick  & MULCI ci cj n \newline
+                                             Multiplies clear register by an immediate ci=cj * n. &  \\
+  MULSI & 0x33 & ['sw', 's', 'i'] & \tick  & MULSI si sj n \newline
+                                             Multiplies secret register by an immediate si=sj * n. &  \\
+  DIVC & 0x34 & ['cw', 'c', 'c'] & \tick  & DIVC ci cj ck \newline
+                                            Divides (mod p )  clear registers ci=cj / ck. &  \\
+  DIVCI & 0x35 & ['cw', 'c', 'i'] & \tick  & DIVCI ci cj n \newline
+                                            Divides (mod p ) clear register by an immediate ci=cj / n. &  \\
+  MODC & 0x36 & ['cw', 'c', 'c'] & \tick  & MODC ci cj ck \newline
+                                            Clear division with remainder ci=(cj mod ck) (after lifting to the integers). &  \\
+  MODCI & 0x37 & ['cw', 'c', 'i'] & \tick  & MODCI ci cj n \newline
+                                            Clear division with remainder ci=(cj mod n) (after lifting to the integers) by an immediate. &  \\
+  LEGENDREC & 0x38 & ['cw', 'c'] & \tick  & LEGENDREC ci cj \newline
+                         Legendre symbol computation on a clear register ci = (cj / p). &  \\
+  DIGESTC & 0x39 & ['cw', 'c'] & \tick  & DIGESTC ci cj \newline
+                                             Truncated hash computation on a clear register ci = H(cj). &  \\
+\hline
+\end{longtable}
+\subsubsection{IO}
+\begin{longtable}{|l|c|p{1in}|c|p{2.27in}|c|}
+\hline
+Instr & Code & Operands & Vect & Description & Notes \\
+\hline
+  OUTPUT\_CLEAR & 0x40 & ['c', 'i'] & \tick  & OUTPUT\_CLEAR ci n \newline
+                                            Public output of clear register ci to IO class on channel n. & $\dagger$, $\tau_0$ \\
+  INPUT\_CLEAR & 0x41 & ['cw', 'i'] & \tick  & INPUT\_CLEAR ci n \newline
+					    Gets clear public input ci from the IO class on channel n.
+                                            Public inputs need to be the same for all players running the protocol, otherwise a crash will occur. & $\dagger$, $\tau_0$ \\
+  OUTPUT\_SHARES & 0x42 & ['int', 'ch', '*s'] &  & OUTPUT\_SHARES n+1 ch si1 ... sin \newline
+           Write shares sij for j=1..n to the IO class channel ch. & $\dagger$, $\tau_0$ \\
+  INPUT\_SHARES & 0x43 & ['int', 'i', '*sw'] &  & INPUT\_SHARES n+1 ch si1 ... sin \newline
+          Read shares sij for j=1..n from the IO class channel ch. & $\dagger$, $\tau_0$ \\
+  PRIVATE\_INPUT & 0x44 & ['sw', 'p', 'int'] &  & PRIVATE\_INPUT si p m \newline
+                                  Private input from player p on channel m assign result to secret si. & c1, $\dagger$, $\tau_0$ \\
+  PRIVATE\_OUTPUT & 0x46 & ['s', 'p', 'int'] &  & PRIVATE\_OUTPUT si p m \newline
+                                  Private output to player p on channel m of secret si. & c1, $\dagger$, $\tau_0$ \\
+  OUTPUT\_INT & 0x48 & ['r', 'i'] & \tick  & OUTPUT\_INT ri n \newline
+                                            Public output of regint register ri to IO class on channel n. & $\dagger$, $\tau_0$ \\
+  INPUT\_INT & 0x49 & ['rw', 'i'] & \tick  & INPUT\_INT ri n \newline
+					    Gets regint public input ri from the IO class on channel n.
+                                            Public inputs need to be the same for all players running the protocol, otherwise a crash will occur. & $\dagger$, $\tau_0$ \\
+  OPEN\_CHANNEL & 0x4A & ['rw', 'i'] &  & OPEN\_CHANNEL ri n \newline
+					  Opens channel number n for reading/writing on the IO class.
+                                          Channels are assumed to be bi-directional, i.e. can read and write.
+                                          This is provided as some IO classes may require this to be called
+					  explicitly, the default one does not need this.
+					  The return value ri {\bf can} be some error code which the IO class
+            may want to return. & $\dagger$, $\tau_0$ \\
+  CLOSE\_CHANNEL & 0x4B & ['i'] &  & CLOSE\_CHANNEL n \newline
+					  Closes channel number n for reading/writing on the IO class.
+                                          This is provided as some IO classes may require this to be called
+            explicitly, the default one does not need this. & $\dagger$, $\tau_0$ \\
+\hline
+\end{longtable}
+\subsubsection{Open}
+\begin{longtable}{|l|c|p{1in}|c|p{2.27in}|c|}
+\hline
+Instr & Code & Operands & Vect & Description & Notes \\
+\hline
+  STARTOPEN & 0xA0 & ['int', '*s'] & \tick  & STARTOPEN n, s1,...,sn \newline
+                                         Start opening secret register si. & c0 \\
+  STOPOPEN & 0xA1 & ['int', '*cw'] & \tick  & STOPOPEN n, c1, ..., cn \newline
+                                          Store previous opened value in clear register ci. & c0 \\
+  OPENSINT & 0xA2 & ['rw', 's'] & \tick  & OPENSINT ri sj \newline
+                                           Open the secret regint in sj and assign it to ri.
+                                           XXXX We will want to change this in future XXXXX & c2 \\
+  OPENSBIT & 0xA3 & ['rw', 'sb'] & \tick  & OPENSBIT ri sbj \newline
+                                           Open the sbit in sbj and assign it to ri.
+                                           XXXX We will want to change this in future XXXXX & c2 \\
+\hline
+\end{longtable}
+\subsubsection{Data access}
+\begin{longtable}{|l|c|p{1in}|c|p{2.27in}|c|}
+\hline
+Instr & Code & Operands & Vect & Description & Notes \\
+\hline
+  TRIPLE & 0x50 & ['sw', 'sw', 'sw'] & \tick  & TRIPLE si sj sk \newline
+                                        Load secret registers si, sj and sk with the next multiplication triple. &  \\
+  BIT & 0x51 & ['sw'] & \tick  & BIT si \newline
+                                 Load secret register si with the next secret bit. &  \\
+  SQUARE & 0x52 & ['sw', 'sw'] & \tick  & SQUARE si sj \newline
+                                        Load secret registers si and sj with the next square pair. &  \\
+  DABIT & 0x53 & ['sw', 'sbw'] & \tick  & DABIT si sbj \newline
+                                         Load secret, sbit registers si and sbj with the next secret dabit. &  \\
+\hline
+\end{longtable}
+\subsubsection{sregint/sbit instructions}
+\begin{longtable}{|l|c|p{1in}|c|p{2.27in}|c|}
+\hline
+Instr & Code & Operands & Vect & Description & Notes \\
+\hline
+  LDMSINT & 0x60 & ['srw', 'int'] & \tick  & LDMSINT si, n \newline
+                                    Assigns secret regint register si the value in memory SR[n]. & $\star(r)$ \\
+  LDMSINTI & 0x61 & ['srw', 'r'] & \tick  & LDMSINTI si, rj \newline
+                                    Assigns secret regint register si the value in secret memory SR[rj],
+				    where rj is the j-th regint register. & $\star(r)$ \\
+  STMSINT & 0x62 & ['s', 'int'] & \tick  & STMSINT si n \newline
+                                     Sets memory SR[n] to be the value in sregint register si. & $\star(w)$ \\
+  STMSINTI & 0x63 & ['s', 'r'] & \tick  & STMSINT si rj \newline
+                                     Sets memory SR[rj] to be the value in sregint register si. & $\star(w)$ \\
+  MOVSINT & 0x64 & ['srw', 's'] & \tick  & MOVSINT si sj \newline
+                                   Assigns secure register si the value in the secure register sj. &  \\
+  LDSINT & 0x65 & ['srw', 'i'] & \tick  & LDSINT si n \newline
+                                    Assigns sregint register si a share of the value n. &  \\
+  ADDSINT & 0x66 & ['srw', 's', 's'] & \tick  & ADDSINT si sj sk \newline
+                                            Adds secret regint registers si=sj+sk. &  \\
+  ADDSINTC & 0x67 & ['srw', 's', 'r'] & \tick  & ADDSINTC si sj rk \newline
+                                         Adds secret and clear registers si=sj+rk. &  \\
+  SUBSINT & 0x68 & ['srw', 's', 's'] & \tick  & SUBSINT si sj sk \newline
+                                            Subtracts secret regint registers si=sj-sk. &  \\
+  SUBSINTC & 0x69 & ['srw', 's', 'r'] & \tick  & SUBSINTC si sj rk \newline
+                                         Subtracts clear from secret register si=sj-rk. &  \\
+  SUBCINTS & 0x6A & ['srw', 'r', 's'] & \tick  & SUBSINTC si sj rk \newline
+                                         Subtracts secret from clear register si=rj-sk. &  \\
+  MULSINT & 0x6B & ['srw', 's', 's'] & \tick  & MULSINT si sj sk \newline
+                                            Multiplies secret regint registers si=sj * sk. &  \\
+  MULSINTC & 0x6C & ['srw', 's', 'r'] & \tick  & MULSINTC si sj rk \newline
+                                            Multiplies secret and clear regint registers si=sj * rk. &  \\
+  DIVSINT & 0x6D & ['srw', 's', 's'] & \tick  & DIVSINT si sj sk \newline
+                                            Division of secret regint registers si=sj * sk. &  \\
+  SHLSINT & 0x6E & ['srw', 's', 'int'] & \tick  & SHLSINT i j k \newline
+                                            Shift an sregint register left by k values &  \\
+  SHRSINT & 0x6F & ['srw', 's', 'int'] & \tick  & SHRSINT i j k \newline
+                                            Shift an sregint register right by k values &  \\
+\hline
+\end{longtable}
+\subsubsection{Bitwise logic}
+\begin{longtable}{|l|c|p{1in}|c|p{2.27in}|c|}
+\hline
+Instr & Code & Operands & Vect & Description & Notes \\
+\hline
+  ANDC & 0x70 & ['cw', 'c', 'c'] & \tick  & ANDC ci cj ck \newline
+                                   Lifts to integers, performs logical AND then converts back to modp, ci = cj and ck &  \\
+  XORC & 0x71 & ['cw', 'c', 'c'] & \tick  & XORC ci cj ck \newline
+                                   Lifts to integers, performs logical XOR then converts back to modp, ci = cj xor ck &  \\
+  ORC & 0x72 & ['cw', 'c', 'c'] & \tick  & ORC ci cj ck \newline
+                                   Lifts to integers, performs logical OR then converts back to modp, ci = cj or ck &  \\
+  ANDCI & 0x73 & ['cw', 'c', 'i'] & \tick  & ANDCI ci cj n \newline
+                                          Equivalent of ANDC with an immediate value ci = cj and n &  \\
+  XORCI & 0x74 & ['cw', 'c', 'i'] & \tick  & XORCI ci cj n \newline
+                                          Equivalent of XORC with an immediate value ci = cj xor n &  \\
+  ORCI & 0x75 & ['cw', 'c', 'i'] & \tick  & ORCI ci cj n \newline
+                                          Equivalent of ORC with an immediate value ci = cj or n &  \\
+  NOTC & 0x76 & ['cw', 'c', 'i'] & \tick  & NOTC ci cj n \newline
+                                       This takes the integer representation of the clear register cj,
+                                       flips all the bits, adds $2^n$ and then converts back to clear modp register ci. &  \\
+  NEG & 0x77 & ['srw', 's'] & \tick  & NEG si sj \newline
+                                       Negation of an sregint si=-sj &  \\
+  SAND & 0x78 & ['srw', 's', 'sb'] & \tick  & SAND si sj sbk \newline
+                                        ANDs the sregint with the sbit (in all bit positions) si= sj and sbk. &  \\
+  XORSB & 0x79 & ['sbw', 'sb', 'sb'] & \tick  & XORSB sbi sbj sbk \newline
+                                      Secret XOR of sbit registers sbi = (sbj xor sbk). &  \\
+  ANDSB & 0x7A & ['sbw', 'sb', 'sb'] & \tick  & ANDSB sbi sbj sbk \newline
+                                      Secret AND of sbit registers sbi = (sbj and sbk). &  \\
+  ORSB & 0x7B & ['sbw', 'sb', 'sb'] & \tick  & ORSB sbi sbj sbk \newline
+                                      Secret OR of sbit registers sbi = (sbj or sbk). &  \\
+  NEGB & 0x7C & ['sbw', 'sb'] & \tick  & NEGB sbi sbj \newline
+                                       Secret NEG of sbit register sbi = 1-sbj. &  \\
+\hline
+\end{longtable}
+\subsubsection{Bitwise shifts}
+\begin{longtable}{|l|c|p{1in}|c|p{2.27in}|c|}
+\hline
+Instr & Code & Operands & Vect & Description & Notes \\
+\hline
+  SHLC & 0x80 & ['cw', 'c', 'c'] & \tick  & SHLC ci cj ck \newline
+                                     Clear bitwise shift left of clear register ci = cj $\ll$ ck (after converting to integers) &  \\
+  SHRC & 0x81 & ['cw', 'c', 'c'] & \tick  & SHRC ci cj ck \newline
+                                     Clear bitwise shift right of clear register ci = cj $\gg$ ck (after converting to integers) &  \\
+  SHLCI & 0x82 & ['cw', 'c', 'i'] & \tick  & SHLCI ci cj n \newline
+                                     Clear bitwise shift left of clear register ci = cj $\ll$ n (after converting to integers) &  \\
+  SHRCI & 0x83 & ['cw', 'c', 'i'] & \tick  & SHRCI ci cj n \newline
+                                     Clear bitwise shift right of clear register ci = cj $\gg$ n (after converting to integers) &  \\
+\hline
+\end{longtable}
+\subsubsection{Branching and comparison}
+\begin{longtable}{|l|c|p{1in}|c|p{2.27in}|c|}
+\hline
+Instr & Code & Operands & Vect & Description & Notes \\
+\hline
+  JMP & 0x90 & ['int'] &  & JMP n \newline
+                           Unconditional relative jump of n+1 instructions. & $\ddagger$ \\
+  JMPNZ & 0x91 & ['r', 'int'] &  & JMPNZ ri n \newline
+                          Jump of n+1 instructions if regint register ri is not equal to 0.
+                          Example: \newline
+            jmpnz c, n  : advance n+1 instructions if c is non-zero \newline
+            jmpnz c, 0  : do nothing \newline
+            jmpnz c, -1 : infinite loop if c is non-zero \newline & $\ddagger$ \\
+  JMPEQZ & 0x92 & ['r', 'int'] &  & JMPEQZ ri n \newline
+                          Jump of n+1 instructions if regint register ri is equal to 0. & $\ddagger$ \\
+  EQZINT & 0x93 & ['rw', 'r'] & \tick  & EQZINT ri rj \newline
+                                 Clear comparison to zero test of regint register ri = (rj == 0). &  \\
+  LTZINT & 0x94 & ['rw', 'r'] & \tick  & LTZINT ri rj \newline
+                                 Clear comparison of regint registers ri = (rj < 0). &  \\
+  LTINT & 0x95 & ['rw', 'r', 'r'] & \tick  & LTINT ri rj rk \newline
+                                 Clear comparison of regint registers ri = (rj < rk). &  \\
+  GTINT & 0x96 & ['rw', 'r', 'r'] & \tick  & GTINT ri rj rk \newline
+                                 Clear comparison of regint registers ri = (rj > rk). &  \\
+  EQINT & 0x97 & ['rw', 'r', 'r'] & \tick  & EQINT ri rj rk \newline
+                                 Clear comparison of regint registers ri = (rj == rk). &  \\
+  CALL & 0x14 & ['int'] &  & CALL n \newline
+                                Pushes the PC onto the stack, and does a relative jump of n+1 instructions & $\ddagger$ \\
+  RETURN & 0x15 & [] &  & RETURN \newline
+                                Pops the top element off the stack, and assigns the PC to this value & $\ddagger$ \\
+\hline
+\end{longtable}
+\subsubsection{Integers}
+\begin{longtable}{|l|c|p{1in}|c|p{2.27in}|c|}
+\hline
+Instr & Code & Operands & Vect & Description & Notes \\
+\hline
+  LDINT & 0x9A & ['rw', 'i'] & \tick  & LDINT ri n \newline
+                              Sets regint register ri to the immediate value n. &  \\
+  ADDINT & 0x9B & ['rw', 'r', 'r'] & \tick  & ADDINT ri rj rk \newline
+                                     Addition of regint registers ri=rj + rk. &  \\
+  SUBINT & 0x9C & ['rw', 'r', 'r'] & \tick  & SUBINT ri rj rk \newline
+                                     Subtraction of regint registers ri=rj - rk. &  \\
+  MULINT & 0x9D & ['rw', 'r', 'r'] & \tick  & MULINT ri rj rk \newline
+                                     Multiplication of regint registers ri=rj * rk. &  \\
+  DIVINT & 0x9E & ['rw', 'r', 'r'] & \tick  & DIVINT ri rj rk \newline
+                                     Division of regint registers ri=rj / rk. &  \\
+\hline
+\end{longtable}
+\subsubsection{Conversion}
+\begin{longtable}{|l|c|p{1in}|c|p{2.27in}|c|}
+\hline
+Instr & Code & Operands & Vect & Description & Notes \\
+\hline
+  CONVINT & 0xC0 & ['cw', 'r'] & \tick  & CONVINT ci rj \newline
+                                 Convert from regint register rj to clear register ci. &  \\
+  CONVMODP & 0xC1 & ['rw', 'c', 'int'] & \tick  & CONVMODP ri cj n \newline
+                                 Convert from clear register cj to regint register ri with
+                                 bitlength of cj equal to n &  \\
+  CONVSINTSREG & 0xC2 & ['srw', 's'] & \tick  & CONVSINTSREG si sj \newline
+                                    Convert from secret  sj to sregint register si using DaBits & c2 \\
+  CONVREGSREG & 0xC3 & ['srw', 'r'] & \tick  & CONVREGSREG si rj \newline
+                                     Convert from regint register rj to secret register si. &  \\
+  CONVSREGSINT & 0xC4 & ['sw', 's'] & \tick  & CONVREGSINT si sj \newline
+                                     Convert from secret (signed) regint register sj to secret register si using DaBits & c2 \\
+  CONVSUREGSINT & 0xC5 & ['sw', 's'] & \tick  & CONVSUREGSINT si sj \newline
+                                     Convert from secret (unsigned) regint register sj to secret register si using DaBits & c2 \\
+\hline
+\end{longtable}
+\subsubsection{Debug Printing}
+\begin{longtable}{|l|c|p{1in}|c|p{2.27in}|c|}
+\hline
+Instr & Code & Operands & Vect & Description & Notes \\
+\hline
+  PRINT\_MEM & 0xB0 & ['int'] & \tick  & PRINT\_MEM i \newline
+                                      Print value in clear memory C[i] to debug IO channel. & $\dagger$, $\tau_0$ \\
+  PRINT\_REG & 0xB2 & ['c'] & \tick  & PRINT\_REG ci  \newline
+                                 Print value of clear register ci to the debug IO channel. & $\dagger$, $\tau_0$ \\
+  PRINT\_CHAR & 0xB3 & ['i'] &  & PRINT\_CHAR i \newline
+                               Prints the single character i to the debug IO channel. & $\dagger$, $\tau_0$ \\
+  PRINT\_CHAR4 & 0xB4 & ['i'] &  & PRINT\_CHAR4 i \newline
+                               Prints the 4 character string i to the debug IO channel. & $\dagger$, $\tau_0$ \\
+  PRINT\_CHAR\_REGINT & 0xB5 & ['r'] & \tick  & PRINT\_CHAR\_REGINT ri \newline
+                               Prints the single character in regint ri to the debug IO channel. & $\dagger$, $\tau_0$ \\
+  PRINT\_CHAR4\_REGINT & 0xB6 & ['r'] & \tick  & PRINT\_CHAR4\_REGINT ri \newline
+                                Prints regint ri as a four single character string to the debug IO channel. & $\dagger$, $\tau_0$ \\
+  PRINT\_FLOAT & 0xB7 & ['c', 'c', 'c', 'c'] & \tick  & PRINT\_FLOAT ci cj ck cl \newline
+                                Prints the floating point number in clear registers (ci, cj, ck, cl)
+                                assuming they map to the representation (v,p,z,s) & $\dagger$, $\tau_0$ \\
+  PRINT\_FIX & 0xB8 & ['c', 'i', 'i'] & \tick  & PRINT\_FIX ci f k \newline
+                                Prints the floating point number in clear register ci using
+                                parameters f and k. & $\dagger$, $\tau_0$ \\
+  PRINT\_INT & 0xB9 & ['r'] & \tick  & PRINT\_INT ri \newline
+                               Prints the value of register ri to debug IO channel. & $\dagger$, $\tau_0$ \\
+\hline
+\end{longtable}
+\subsubsection{Comparison of sregints}
+\begin{longtable}{|l|c|p{1in}|c|p{2.27in}|c|}
+\hline
+Instr & Code & Operands & Vect & Description & Notes \\
+\hline
+  EQZSINT & 0xD0 & ['sbw', 's'] & \tick  & EQZSINT sbi, sj \newline
+                                   Equality test to zero of secret register sbi = (sj == 0). &  \\
+  LTZSINT & 0xD1 & ['sbw', 's'] & \tick  & EQZSINT sbi, sj \newline
+                                   Less than test to zero of secret register sbi = (sj < 0). &  \\
+\hline
+\end{longtable}
+\subsubsection{Bitwise logical operations on sregints}
+\begin{longtable}{|l|c|p{1in}|c|p{2.27in}|c|}
+\hline
+Instr & Code & Operands & Vect & Description & Notes \\
+\hline
+  ANDSINT & 0xD3 & ['srw', 's', 's'] & \tick  & ANDSINT si sj sk \newline
+                                       Bitwise ANDs secret registers si= sj and sk. &  \\
+  ANDSINTC & 0xD4 & ['srw', 's', 'r'] & \tick  & ANDSINT si sj rk \newline
+                                       Bitwise ANDs secret register with a clear si= sj and rk. &  \\
+  ORSINT & 0xD5 & ['srw', 's', 's'] & \tick  & ORSINT si sj sk \newline
+                                       Bitwise ORs secret registers si= sj or sk. &  \\
+  ORSINTC & 0xD6 & ['srw', 's', 'r'] & \tick  & ORSINT si sj rk \newline
+                                       Bitwise ORs secret register with a clear si= sj or rk. &  \\
+  XORSINT & 0xD7 & ['srw', 's', 's'] & \tick  & XORSINT si sj sk \newline
+                                       Bitwise XORs secret registers si= sj xor sk. &  \\
+  XORSINTC & 0xD8 & ['srw', 's', 'r'] & \tick  & XORSINT si sj rk \newline
+                                       Bitwise XORs secret register with a clear si= sj xor rk. &  \\
+  INVSINT & 0xD9 & ['srw', 's'] & \tick  & INVSINT si sj \newline
+                                        Bitwise inversion of the register si = INV sj. &  \\
+\hline
+\end{longtable}
+\subsubsection{64x64 $\longrightarrow$ 128 multiplier}
+\begin{longtable}{|l|c|p{1in}|c|p{2.27in}|c|}
+\hline
+Instr & Code & Operands & Vect & Description & Notes \\
+\hline
+  MUL2SINT & 0xDA & ['srw', 'srw', 's', 's'] & \tick  & MUL2SINT si sj su sv \newline
+                                             Full multiplication of secret registers
+                                             (si || sj )=su *  sv. \newline
+                                             Where si is the most significant word and sj is the least
+                                             significant word of the output. &  \\
+\hline
+\end{longtable}
+\subsubsection{GC (and allied) commands}
+\begin{longtable}{|l|c|p{1in}|c|p{2.27in}|c|}
+\hline
+Instr & Code & Operands & Vect & Description & Notes \\
+\hline
+  GC & 0xDB & ['int'] &  & GC i \newline
+                            This calls the Garbled Circuit with index i. & c2, $\star(r)$, $\star(w)$ \\
+  BITSINT & 0xDC & ['sbw', 's', 'int'] & \tick  & BITSINT sbi sj n \newline
+                                                Assigns sbit register sbi the n-th bit of register sj. &  \\
+  SINTBIT & 0xDD & ['srw', 's', 'sb', 'int'] & \tick  & BITSINT si sj sbk n \newline
+                                        Assigns si to sj, and then sets the n-th bit to be sbk &  \\
+\hline
+\end{longtable}
+\subsubsection{Others}
+\begin{longtable}{|l|c|p{1in}|c|p{2.27in}|c|}
+\hline
+Instr & Code & Operands & Vect & Description & Notes \\
+\hline
+  RAND & 0xE0 & ['rw', 'r'] & \tick  & RAND ri rj \newline
+                                    Writes to the regint register ri a random value reduced modulo rj
+                                    The random value is the same for all players, so in particular it
+                                    is not really random.
+                                    More useful for randomization for Monte-Carlo algorithms &  \\
+  START\_CLOCK & 0xE1 & ['i'] &  & START\_CLOCK n \newline
+                                 Re-initializes the specified timer n & $\dagger$ \\
+  STOP\_CLOCK & 0xE2 & ['i'] &  & STOP\_CLOCK n \newline
+                                 Prints, to stdout (note {\bf not} the IO class) the time since the last initialization of timer n. & $\dagger$ \\
+\hline
+\end{longtable}
+\subsubsection{Local functions}
+\begin{longtable}{|l|c|p{1in}|c|p{2.27in}|c|}
+\hline
+Instr & Code & Operands & Vect & Description & Notes \\
+\hline
+  LF & 0xDE & ['int'] &  & LF\_CINT i \newline
+                    This calls the Local Function with index i. & $\star(r)$, $\star(w)$ \\
+\hline
+\end{longtable}
+\subsubsection{Stack Operations}
+\begin{longtable}{|l|c|p{1in}|c|p{2.27in}|c|}
+\hline
+Instr & Code & Operands & Vect & Description & Notes \\
+\hline
+  PUSHINT & 0x100 & ['r'] & \tick  & PUSHINT ri \newline
+                                 Push regint register ri onto the thread local stack & $\star(w)$ \\
+  POPINT & 0x101 & ['rw'] & \tick  & POPINT ri \newline
+                                 Pop regint register ri from the thread local stack & $\star(r)$, $\star(w)$ \\
+  PEEKINT & 0x102 & ['rw', 'r'] & \tick  & PEEKINT ri, rj \newline
+                                 Peeks at position pointed to by register rj from the thread-local regint stack and assigns to regint register ri. & $\star(r)$ \\
+  POKEINT & 0x103 & ['r', 'r'] & \tick  & POKEINT ri, rj \newline
+                                 Replaces the data item pointed to by register ri on the thread-local regint local stack with the contents of register rj. & $\star(w)$ \\
+  GETSPINT & 0x104 & ['rw'] &  & GETSPINT ri \newline
+                                 Assigns the current stack pointer on the regint stack to register ri. & $\star(r)$ \\
+  PUSHSINT & 0x105 & ['s'] & \tick  & PUSHSINT ri \newline
+                                 Push secret regint register si onto the thread local stack & $\star(w)$ \\
+  POPSINT & 0x106 & ['srw'] & \tick  & POPSINT ri \newline
+                                 Pop secret regint register si from the thread local stack & $\star(r)$, $\star(w)$ \\
+  PEEKSINT & 0x107 & ['srw', 'r'] & \tick  & PEEKSINT si, rj \newline
+                                 Peeks at position pointed to by register rj from the thread-local secret regint stack and assigns to secret regint register si. & $\star(r)$ \\
+  POKESINT & 0x108 & ['r', 's'] & \tick  & POKESINT ri, sj \newline
+                                 Replaces the data item pointed to by register ri on the thread-local secret regint local stack with the contents of register sj. & $\star(w)$ \\
+  GETSPSINT & 0x109 & ['rw'] &  & GETSPSINT ri \newline
+                                 Assigns the current stack pointer on the secret regint stack to register ri. & $\star(r)$ \\
+  PUSHSBIT & 0x10A & ['sb'] & \tick  & PUSHSBIT ri \newline
+                                 Push secret bit register sbi onto the thread local stack & $\star(w)$ \\
+  POPSBIT & 0x10B & ['sbw'] & \tick  & POPSBIT ri \newline
+                                 Pop secret bit register sbi from the thread local stack & $\star(r)$, $\star(w)$ \\
+  PEEKSBIT & 0x10C & ['sbw', 'r'] & \tick  & PEEKSBIT sbi, rj \newline
+                                 Peeks at position pointed to by register rj from the thread-local secret bit stack and assigns to secret bit register sbi. & $\star(r)$ \\
+  POKESBIT & 0x10D & ['r', 'sb'] & \tick  & POKESBIT ri, sbj \newline
+                                 Replaces the data item pointed to by register ri on the thread-local secret bit local stack with the contents of register sbj. & $\star(w)$ \\
+  GETSPSBIT & 0x10E & ['rw'] &  & GETSPSBIT ri \newline
+                                 Assigns the current stack pointer on the secret bit stack to register ri. & $\star(r)$ \\
+  PUSHC & 0x110 & ['c'] & \tick  & PUSHC ri \newline
+                                 Push clear register ci onto the thread local stack & $\star(w)$ \\
+  POPC & 0x111 & ['cw'] & \tick  & POPC ri \newline
+                                 Pop clear register ci from the thread local stack & $\star(r)$, $\star(w)$ \\
+  PEEKC & 0x112 & ['cw', 'r'] & \tick  & PEEKC ci, rj \newline
+                                 Peeks at position pointed to by register rj from the thread-local clear stack and assigns to clear register ci. & $\star(r)$ \\
+  POKEC & 0x113 & ['r', 'c'] & \tick  & POKEC ri, cj \newline
+                                 Replaces the data item pointed to by register ri on the thread-local clear local stack with the contents of register cj. & $\star(w)$ \\
+  GETSPC & 0x114 & ['rw'] &  & GETSPC ri \newline
+                                 Assigns the current stack pointer on the clear stack to register ri. & $\star(r)$ \\
+  PUSHS & 0x115 & ['s'] & \tick  & PUSHS ri \newline
+                                 Push secret register si onto the thread local stack & $\star(w)$ \\
+  POPS & 0x116 & ['sw'] & \tick  & POPS ri \newline
+                                 Pop secret register si from the thread local stack & $\star(r)$, $\star(w)$ \\
+  PEEKS & 0x117 & ['sw', 'r'] & \tick  & PEEKS si, rj \newline
+                                 Peeks at position pointed to by register rj from the thread-local secret stack and assigns to secret register si. & $\star(r)$ \\
+  POKES & 0x118 & ['r', 's'] & \tick  & POKES ri, sj \newline
+                                 Replaces the data item pointed to by register ri on the thread-local secret local stack with the contents of register sj. & $\star(w)$ \\
+  GETSPS & 0x119 & ['rw'] &  & GETSPS ri \newline
+                                 Assigns the current stack pointer on the secret stack to register ri. & $\star(r)$ \\
+\hline
+\end{longtable}
