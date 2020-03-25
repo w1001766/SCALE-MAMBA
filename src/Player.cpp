@@ -288,7 +288,6 @@ int main(int argc, const char *argv[])
   // below in creating the machine we know what size
   // to make the default sregint memory
   aBit::set_nplayers(SD.n);
-
   /*************************************
    *    Load in MAC keys (if any)      *
    *************************************/
@@ -300,6 +299,7 @@ int main(int argc, const char *argv[])
     {
       throw file_error(ss.str());
     }
+
   for (unsigned int i= 0; i < Share::SD.nmacs; i++)
     {
       inp >> MacK[i];

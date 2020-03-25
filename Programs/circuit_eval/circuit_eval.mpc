@@ -1,0 +1,40 @@
+AES_128=100
+
+def push_data(stuff,n):
+	for i in range(n):
+		sregint.push(stuff[i])
+def pop_data(stuff,n):
+	for i in range(n):
+		stuff[n-i-1]=sregint.pop()
+# Set key
+key = [sregint(0), sregint(-1)]
+mess = [sregint(-1), sregint(1)]
+ciph = [sregint() for _ in range(2)]
+
+print_ln("AES-128")
+push_data(key,2)
+push_data(mess,2)
+
+# Op
+GC(AES_128)
+pop_data(ciph,2)
+# Now open the values to check all is OK
+m = [None] * 2
+k = [None] * 2
+c = [None] * 2
+for i in range(2):
+	m[i] = mess[i].reveal()
+	k[i] = key[i].reveal()
+	c[i] = ciph[i].reveal()
+
+print_ln("Key")
+k[1].public_output()
+k[0].public_output()
+
+print_ln("Message")
+m[1].public_output()
+m[0].public_output()
+
+print_ln("Ciphertext")
+c[1].public_output()
+c[0].public_output()
