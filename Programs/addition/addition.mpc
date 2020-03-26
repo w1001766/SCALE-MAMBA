@@ -1,0 +1,7 @@
+
+print_ln('=================== BEGIN PROGRAM =======================')
+a = sint(1000)
+b = sint(32)
+c = a + b
+print_ln('Result is %s', c.reveal())
+print_ln('=================== END PROGRAM =========================')

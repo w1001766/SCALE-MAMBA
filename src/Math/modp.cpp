@@ -305,7 +305,6 @@ void modp::output(ostream &s, const Zp_Data &ZpD, bool human) const
 
 void modp::input(istream &s, const Zp_Data &ZpD, bool human)
 {
-  //cout<<"WENXUAN: Inside modp.cpp"<<endl;
   if (s.peek() == EOF)
     {
       if (s.tellg() == 0)

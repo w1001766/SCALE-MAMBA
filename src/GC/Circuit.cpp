@@ -188,6 +188,8 @@ ostream &operator<<(ostream &s, const Circuit &C)
 void Circuit::evaluate(const vector<vector<int>> &inputs,
                        vector<vector<int>> &outputs) const
 {
+  cout << "WENXUAN: Inside Circuit.cpp" <<endl;
+  cout << numI.size()<<endl;
   vector<int> W(nWires);
   for (unsigned int i= 0; i < nWires; i++)
     {

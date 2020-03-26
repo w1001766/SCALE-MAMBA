@@ -288,22 +288,26 @@ int main(int argc, const char *argv[])
   // below in creating the machine we know what size
   // to make the default sregint memory
   aBit::set_nplayers(SD.n);
+
   /*************************************
    *    Load in MAC keys (if any)      *
    *************************************/
   vector<gfp> MacK(Share::SD.nmacs);
   stringstream ss;
   ss << "Data/MKey-" << my_number << ".key";
+  cout << "WENXUAN: testing"<< endl;
+  cout<<ss.str().c_str()<<endl;
   inp.open(ss.str().c_str());
   if (inp.fail())
     {
       throw file_error(ss.str());
     }
-
+  cout<<"WENXUAN: i AM Here"<<endl;
   for (unsigned int i= 0; i < Share::SD.nmacs; i++)
     {
       inp >> MacK[i];
     }
+  cout<<"WENXUAN: i AM Here"<<endl;
   inp.close();
 
   /*************************************
@@ -313,6 +317,7 @@ int main(int argc, const char *argv[])
   FHE_Params params;
   FFT_Data PTD;
   Ring Rg;
+
   if (Share::SD.type == Full)
     {
       stringstream ss;
